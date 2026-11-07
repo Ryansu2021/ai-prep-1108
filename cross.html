@@ -553,7 +553,7 @@ body.proj .actlink,body.aud .actlink{display:none!important}
 .ip-band.a .ip-tag{background:var(--accent)}.ip-band.b .ip-tag{background:var(--chalk)}
 .ip-say{font-weight:700;color:var(--ink2)}.ip-say b{color:var(--accent)}
 .ip-row{display:flex;align-items:center;gap:.35em}
-.ip-c{flex:1;min-width:0;background:var(--paper);border-radius:.8em;padding:.5em .3em .55em;text-align:center;position:relative;display:flex;flex-direction:column;align-items:center;gap:.1em}
+.ip-c[data-goto]{cursor:pointer}.ip-c[data-goto]:hover{box-shadow:0 0 0 2px var(--accent) inset}.ip-c{flex:1;min-width:0;background:var(--paper);border-radius:.8em;padding:.5em .3em .55em;text-align:center;position:relative;display:flex;flex-direction:column;align-items:center;gap:.1em}
 .ip-n{position:absolute;top:-.5em;left:-.3em;width:1.5em;height:1.5em;border-radius:50%;color:#fff;font-weight:900;font-size:.85em;display:grid;place-items:center}
 .ip-ic{font-size:1.9em;line-height:1.2}
 .ip-c b{font-size:.95em;line-height:1.3}.ip-c small{font-size:.72em;color:var(--ink2)}
@@ -936,12 +936,19 @@ function coverArt(){
       <text x="0" y="240" font-size="20" fill="#b4532f" font-weight="700">(x + 2)(x + 3)</text></g></svg>`;
 }
 function introPage(){
-  const st=(n,ic,t,s2,c)=>`<div class="ip-c"><div class="ip-n" style="background:${c}">${n}</div><div class="ip-ic">${ic}</div><b>${t}</b><small>${s2}</small></div>`;
+  const st=(n,ic,t,s2,c,g)=>`<div class="ip-c"${g!=null?` data-goto="${g}" role="button"`:''}><div class="ip-n" style="background:${c}">${n}</div><div class="ip-ic">${ic}</div><b>${t}</b><small>${s2}</small></div>`;
+  /* 「今天怎麼走」跟著牌組（ROUTE）的順序與收起狀態產生；點卡片跳到該段 */
+  const at=n=>UNIT_START[n]!=null&&UNIT_START[n]>=0;
+  const p31=()=>{ const i=PAGES.findIndex(p=>p.u===3&&(p.items||[]).some(b=>(b.pid&&/^3-1/.test(b.pid))||(b.b==='mini'&&b.items.some(m=>/^3-1/.test(m[0]))))); return i>=0?i:UNIT_START[3]; };
+  const STEP={1:[['🎯','一題會考題','看見學生卡在哪']],2:[['📚','讀懂示例','夢 N 001、002']],3:[['🎮','先玩範例','數字猜猜樂'],['🛠','自己做','學習單＋網頁']],7:[['✍️','寫成示例','帶回教室']]};
+  const route=[]; ROUTE.o.forEach(k=>{ if(ROUTE.x.includes(k)||/^B:/.test(k)) return; const n=+k; if(!STEP[n]||!at(n)) return;
+    STEP[n].forEach((d,j)=>route.push([n===3&&j===1?p31():UNIT_START[n],...d])); });
+  const has3=at(3);
   const ar='<span class="ip-ar">➜</span>';
   return `<div class="ip"><div class="ip-h"><div class="h3">開始之前</div><span class="ip-k">國中數學教師研習</span></div>
    <section class="ip-band a"><div class="ip-bh"><span class="ip-tag">今天怎麼走</span><span class="ip-say">從一題<b>會考題</b>，到一個<b>自己做的網頁</b></span></div>
-    <div class="ip-row">${st(1,'🎯','一題會考題','看見學生卡在哪','var(--accent)')}${ar}${st(2,'📚','讀懂示例','夢 N 001、002','var(--accent)')}${ar}${st(3,'🎮','先玩範例','數字猜猜樂','var(--accent)')}${ar}${st(4,'🛠','自己做','學習單＋網頁','var(--accent)')}${ar}${st(5,'✍️','寫成示例','帶回教室','var(--accent)')}</div>
-    <div class="ip-rule"><span>同一個流程</span><i>抓迷思</i><em>›</em><i>出題</i><em>›</em><i>交叉審題</i><em>›</em><i>做網頁</i></div></section>
+    <div class="ip-row">${route.map((r,i)=>(i?ar:'')+st(i+1,r[1],r[2],r[3],'var(--accent)',r[0])).join('')}</div>
+    ${has3?'<div class="ip-rule"><span>同一個流程</span><i>抓迷思</i><em>›</em><i>出題</i><em>›</em><i>交叉審題</i><em>›</em><i>做網頁</i></div>':''}</section>
    <section class="ip-band b"><div class="ip-bh"><span class="ip-tag">怎麼看這本書</span><span class="ip-say">公用電腦免安裝，<b>只要瀏覽器</b></span></div>
     <div class="ip-row">${st(1,'📖','往右翻頁','或從目錄跳','var(--chalk)')}${ar}${st(2,'🤔','先猜','先想一想','var(--chalk)')}${ar}${st(3,'📱','手機作答','同一個連結','var(--chalk)')}${ar}${st(4,'📋','複製提示詞','貼給三家 AI','var(--chalk)')}</div></section>
   </div>`;
