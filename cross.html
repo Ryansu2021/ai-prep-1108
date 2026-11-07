@@ -1385,9 +1385,9 @@ if(!STUDENT_BUILD) (function(){
   const mk=(id,txt,title)=>{const b=document.createElement('button');b.id=id;b.className='mode';b.textContent=txt;b.title=title;return b;};
   const bWin=mk('bWin','🖥 投影視窗','開一個只給學員看的投影視窗，拖到投影機畫面'),
         bProj=mk('bProj','投影','只有一個螢幕時：單頁滿版，隱藏時間與講師備註（P）'),
-        bTm=mk('bTm','⏱ 計時','計時器（T）'), bAct=mk('bAct','📊 互動','投票與文字雲（I）'), bLnk=mk('bLnk','📲 學員連結','投影學員版 QR Code 與網址'), bNote=mk('bNote','📝 備註','講師備註、時間配置與課前準備（N），只在講師螢幕顯示');
+        bTm=mk('bTm','⏱ 計時','計時器（T）'), bAct=mk('bAct','📊 互動','投票與文字雲（I）'), bLnk=mk('bLnk','📲 學員連結','投影學員版 QR Code 與網址'), bRoom=mk('bRoom','📽 投影教室','教室模式（B）：投影教室不顯示廣播提示；電腦教室會提醒何時解除廣播'), bNote=mk('bNote','📝 備註','講師備註、時間配置與課前準備（N），只在講師螢幕顯示');
   const sp=document.createElement('span'); sp.className='sep';
-  [bNote,bWin,bProj,bTm,bAct,bLnk,sp].forEach(b=>tb.insertBefore(b,wb));
+  [bNote,bWin,bProj,bTm,bAct,bLnk,bRoom,sp].forEach(b=>tb.insertBefore(b,wb));
   document.body.insertAdjacentHTML('beforeend',`
 <div id="tmr" hidden>
   <div class="tm-head"><span>⏱ 計時器</span><button id="tmX" aria-label="關閉">✕</button></div>
@@ -1495,10 +1495,10 @@ if(!STUDENT_BUILD) (function(){
   if(!AUD){ const lnkGo=i=>{ lnkShow(i); post({t:'lnk',i}); }; bLnk.onclick=()=>lnkGo(lnkI>=0?-1:0); lnkEl.addEventListener('click',e=>{ const b=e.target.closest('[data-lk]'); if(b) lnkGo(+b.dataset.lk); }); }
   /* 教室模式：投影教室（預設，不顯示廣播提示）／電腦教室（顯示何時解除廣播）；記在這台電腦 */
   let ROOM='proj'; try{ ROOM=localStorage.getItem('ebkRoom')||'proj'; }catch(e){}
-  const roomApply=()=>{ document.body.classList.toggle('room-pc',ROOM==='pc'); };
+  const roomApply=()=>{ document.body.classList.toggle('room-pc',ROOM==='pc'); bRoom.textContent=ROOM==='pc'?'🖥 電腦教室':'📽 投影教室'; bRoom.classList.toggle('on',ROOM==='pc'); };
   window.__room=()=>ROOM;
   window.__setRoom=v=>{ ROOM=v; try{ localStorage.setItem('ebkRoom',v); }catch(e){} roomApply(); };
-  if(!AUD){ const rc=document.createElement('style'); rc.textContent='body:not(.room-pc) #bcast{display:none!important}'; document.head.appendChild(rc); roomApply(); }
+  if(!AUD){ const rc=document.createElement('style'); rc.textContent='body:not(.room-pc) #bcast{display:none!important}'; document.head.appendChild(rc); bRoom.onclick=()=>window.__setRoom(ROOM==='pc'?'proj':'pc'); roomApply(); }
   /* 電腦教室模式：提醒什麼時候解除廣播（投影視窗不顯示） */
   if(!AUD){
     const REL_ID=['pg4','pg5','pg9','pg20','pg22','pg24','pg25','pg26','pg27','pg28','pg29','pg30','pg34','pg35','pg36'], REL_B=['quota','login','phone','unit','share','wrong'];
@@ -1810,16 +1810,13 @@ if(!STUDENT_BUILD) (function(){
       body = `<div class="fx-row"><button data-fx="logcopy">複製紀錄</button><button data-fx="logclr">清除</button></div>
        <table><tr><th>時間</th><th>頁面</th><th>停留</th></tr>${LOG.map((x,i)=>{ const n=LOG[i+1], d=n?Math.round((n.t-x.t)/1000):null;
          return `<tr><td>${new Date(x.t).toTimeString().slice(0,8)}</td><td>${esc(x.ti)}</td><td>${d==null?'':d>=60?Math.round(d/60)+' 分':d+' 秒'}</td></tr>`; }).join('')}</table>`; }
-    const rm=window.__room?window.__room():'proj';
     p.innerHTML=`<div class="fx-h"><b>🧭 工具</b><button data-fx="deck">🃏 牌組</button><button data-fx="close">✕</button></div>
-      <div class="fx-room"><span>教室模式</span><button data-fx="room" data-v="proj" class="${rm==='proj'?'on':''}">📽 投影教室</button><button data-fx="room" data-v="pc" class="${rm==='pc'?'on':''}">🖥 電腦教室</button><small>${rm==='pc'?'上方會提示何時解除廣播':'學員用手機，不顯示廣播提示'}（B 鍵切換）</small></div>
       <div class="fx-tabs">${tabs.map(t=>`<button data-tab="${t[0]}" class="${TAB===t[0]?'on':''}">${t[1]}</button>`).join('')}</div><div class="fx-b">${body}</div>`; }
   let adhocN=0;
   document.addEventListener('click',e=>{ const p=$('#fxp'); if(p.hidden || !p.contains(e.target)) return;
     const tb=e.target.closest('[data-tab]'); if(tb){ TAB=tb.dataset.tab; MSG=''; return toolRender(); }
     const b=e.target.closest('[data-fx]'); if(!b) return; const f=b.dataset.fx;
     if(f==='close') return toolClose(); if(f==='deck') return deckOpen();
-    if(f==='room'){ if(window.__setRoom) window.__setRoom(b.dataset.v); return toolRender(); }
     if(f==='tpl'){ $('#fxo').value=b.dataset.v; return; }
     if(f==='adhoc'){ const q=($('#fxq').value||'').trim(), type=(document.querySelector('input[name=fxt]:checked')||{}).value||'vote';
       const opts=($('#fxo').value||'').split(/[,，\n]/).map(x=>x.trim()).filter(Boolean).slice(0,8);
@@ -1845,7 +1842,7 @@ if(!STUDENT_BUILD) (function(){
       if(deckIsOpen()){ e.stopImmediatePropagation(); return deckClose(); } if(toolIsOpen()){ e.stopImmediatePropagation(); return toolClose(); } }
     if(e.key==='r'||e.key==='R'){ e.stopImmediatePropagation(); return deckIsOpen()?deckClose():deckOpen(); }
     if(e.key==='k'||e.key==='K'){ e.stopImmediatePropagation(); return toolIsOpen()?toolClose():toolOpen(); }
-    if((e.key==='b'||e.key==='B') && window.__setRoom){ e.stopImmediatePropagation(); window.__setRoom(window.__room()==='pc'?'proj':'pc'); if(toolIsOpen()) toolRender(); return; }
+    if((e.key==='b'||e.key==='B') && window.__setRoom){ e.stopImmediatePropagation(); window.__setRoom(window.__room()==='pc'?'proj':'pc'); return; }
     if(deckIsOpen() && /^[1-9]$/.test(e.key)){ const vis=ROUTE.o.filter(k=>!ROUTE.x.includes(k)), k=vis[+e.key-1]; if(k){ e.stopImmediatePropagation(); deckClose(); go(k); } }
   },true);
 })();
