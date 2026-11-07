@@ -590,6 +590,7 @@ body.proj .actlink,body.aud .actlink{display:none!important}
 #dkd h4{margin:0 0 8px;font-size:15px}
 #dkd [draggable="true"]{-webkit-user-select:none;user-select:none;-webkit-user-drag:element}#dkd [draggable="true"] button{-webkit-user-drag:none}
 .bk-it.drag,.qb-it.drag,.sl-it.drag{opacity:.4}
+#dkd .dk-c.ins-l{box-shadow:-7px 0 0 -1px #d43c3c}#dkd .dk-c.ins-r{box-shadow:7px 0 0 -1px #d43c3c}
 .dk-deck{display:flex;flex-wrap:wrap;gap:12px;align-items:stretch;min-height:110px}
 .dk-c{width:150px;min-height:180px;border:2px solid var(--line);border-radius:12px;background:var(--paper);padding:8px;display:flex;flex-direction:column;gap:4px;cursor:grab;user-select:none;transition:transform .12s}
 .dk-c:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(22,37,31,.14)}
@@ -1763,11 +1764,11 @@ if(!STUDENT_BUILD) (function(){
       return `<div class="sl-it${on?' in':''}" ${on?'':`draggable="true" data-k="B:${b.bid}" data-from="bank"`}><img src="${IMG[b.img]}" alt="" draggable="false"><b>第 ${b.sn} 張${on?'・已在牌組':''}</b>${on?'':`<span><button data-dx="insh" data-b="${b.bid}" class="on">插這裡</button><button data-dx="inse" data-b="${b.bid}">加最後</button></span>`}</div>`; }).join('')}</div></details>`; }
   function moveKey(k,dlt){ const o=ROUTE.o.slice(), vis=o.filter(x=>!ROUTE.x.includes(x)), i=vis.indexOf(k), j=i+dlt; if(i<0||j<0||j>=vis.length) return;
     const a=o.indexOf(vis[i]), b2=o.indexOf(vis[j]); [o[a],o[b2]]=[o[b2],o[a]]; apply({o,x:ROUTE.x}); }
-  function dropTo(k,from,zone,beforeK){
+  function dropTo(k,from,zone,beforeK,after){
     let o=ROUTE.o.filter(x=>x!==k), x=ROUTE.x.filter(y=>y!==k);
     if(zone==='bank'){ if(!isCore(k)) return apply({o,x}); return apply({o:ROUTE.o,x:ROUTE.x.concat(k)}); }
     if(zone==='tray'){ if(!isCore(k)) return apply({o,x}); return apply({o:ROUTE.o,x:ROUTE.x.includes(k)?ROUTE.x:ROUTE.x.concat(k)}); }
-    const at=beforeK?o.indexOf(beforeK):-1; if(at<0) o.push(k); else o.splice(at,0,k); apply({o,x}); }
+    const at=beforeK?o.indexOf(beforeK):-1; if(at<0) o.push(k); else o.splice(at+(after?1:0),0,k); apply({o,x}); }
   document.addEventListener('click',e=>{ const d=$('#dkd'); if(d.hidden || !d.contains(e.target)) return;
     const b=e.target.closest('[data-dx]');
     if(b){ e.stopPropagation(); const f=b.dataset.dx, k=b.dataset.k;
@@ -1784,14 +1785,23 @@ if(!STUDENT_BUILD) (function(){
     const c=e.target.closest('.dk-c'); if(c && c.dataset.from==='deck'){ deckClose(); go(c.dataset.k); }
   },true);
   document.addEventListener('dragstart',e=>{ const c=e.target.closest&&e.target.closest('#dkd [draggable]'); if(!c) return; DRAG={k:c.dataset.k,from:c.dataset.from}; c.classList.add('drag'); try{ e.dataTransfer.setData('text/plain',c.dataset.k); }catch(er){} });
+  /* 依滑鼠位置找插入點：同一列最近的牌，左半＝插在前面、右半＝插在後面；空隙、列尾、下方縫隙都算 */
+  const insClear=()=>document.querySelectorAll('#dkd .ins-l,#dkd .ins-r').forEach(x=>x.classList.remove('ins-l','ins-r'));
+  function insAt(x,y){ const cs=[...document.querySelectorAll('#dkd section[data-zone="deck"] .dk-c[data-from="deck"]')].filter(c=>!DRAG||c.dataset.k!==DRAG.k); if(!cs.length) return null;
+    const R=cs.map(c=>({c,r:c.getBoundingClientRect()}));
+    let row=R.filter(o=>y>=o.r.top-8&&y<=o.r.bottom+8);
+    if(!row.length){ const dy=o=>Math.min(Math.abs(y-o.r.top),Math.abs(y-o.r.bottom)); const m=Math.min(...R.map(dy)); row=R.filter(o=>dy(o)===m); }
+    const best=row.reduce((a,o)=>{ const d=x<o.r.left?o.r.left-x:x>o.r.right?x-o.r.right:0; return !a||d<a.d?{o,d}:a; },null).o;
+    return {c:best.c,k:best.c.dataset.k,after:x>best.r.left+best.r.width/2}; }
   document.addEventListener('dragover',e=>{ if(!DRAG) return; if(e.target.closest('#dkd [data-zone]')) e.preventDefault();
+    insClear(); if(e.target.closest('#dkd section[data-zone="deck"]') && !e.target.closest('.dk-end')){ const t=insAt(e.clientX,e.clientY); if(t) t.c.classList.add(t.after?'ins-r':'ins-l'); }
     /* 拖到可捲動區塊的上下緣時自動捲動（牌組在畫面外也拖得到） */
     let sc=e.target.closest&&e.target.closest('#dkd .dk-col,#dkd .dk-in'); while(sc&&sc.scrollHeight<=sc.clientHeight+2) sc=sc.parentElement&&sc.parentElement.closest('#dkd .dk-col,#dkd .dk-in');
     if(sc){ const r=sc.getBoundingClientRect(), m=60; if(e.clientY<r.top+m) sc.scrollTop-=14; else if(e.clientY>r.bottom-m) sc.scrollTop+=14; } });
   document.addEventListener('drop',e=>{ if(!DRAG) return; const z=e.target.closest('#dkd [data-zone]'); if(!z) return; e.preventDefault();
-    const over=e.target.closest('.dk-c'); const before=(z.dataset.zone==='deck'&&over&&over.dataset.from==='deck'&&over.dataset.k!==DRAG.k)?over.dataset.k:null;
-    const d=DRAG; DRAG=null; dropTo(d.k,d.from,z.dataset.zone,before); });
-  document.addEventListener('dragend',()=>{ DRAG=null; document.querySelectorAll('#dkd .drag').forEach(x=>x.classList.remove('drag')); });
+    insClear(); const t=(z.dataset.zone==='deck'&&!e.target.closest('.dk-end'))?insAt(e.clientX,e.clientY):null;
+    const d=DRAG; DRAG=null; dropTo(d.k,d.from,z.dataset.zone,t?t.k:null,t&&t.after); });
+  document.addEventListener('dragend',()=>{ DRAG=null; insClear(); document.querySelectorAll('#dkd .drag').forEach(x=>x.classList.remove('drag')); });
 
   /* ---------- 工具 ---------- */
   let TAB='ask', MSG='';
