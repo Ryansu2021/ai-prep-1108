@@ -625,6 +625,7 @@ body.aud #dkd,body.aud #fxp{display:none!important}
 /* 工具列：按鈕多，寬螢幕也盡量排成一列 */
 @media (min-width:641px){ .tb{gap:4px;padding:4px 6px}.tb button{padding:0 9px;font-size:13.5px;height:36px;min-width:34px}.tb button.mode{min-width:0}.tb .pg-n{min-width:62px;font-size:13px}.tb .sep{margin:0 1px} }
 @media (min-width:1700px){ .tb button{height:42px;padding:0 12px;font-size:15px} }
+.sl-d{grid-column:1/-1;margin-top:4px;cursor:default}.sl-d summary{cursor:pointer;font-weight:700;font-size:13px;color:var(--ink2)}.sl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:6px}.sl-it{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:5px;display:flex;flex-direction:column;gap:4px;font-size:12px}.sl-it img{width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff;border-radius:4px}.sl-it.in{opacity:.5}.sl-it span{display:flex;gap:4px}.sl-it button{flex:1;font-size:12px;padding:2px 4px}
 .slidep{flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
 .slidep .shot{width:100%;height:100%;display:flex;align-items:center;justify-content:center}
 .slidep .shot img{max-width:100%;max-height:calc(var(--ph) * .84);width:auto;height:auto;object-fit:contain}
@@ -840,6 +841,8 @@ BANK.push(
  {bid:'quad',tag:'補充',lb:'補充',k:'slide',u:10,img:'quad',title:'四種學習情境的比較',ico:'🧭',sub:'Thinking × Effort 四象限',cap:'四種學習情境的比較：以學習歷程比喻 Thinking × Effort',runU:['補充','四種學習情境的比較','']},
  SLIDE_SET('ppt1','簡報：6000 元學到的經驗','💸','花蓮夢N 簡報第 1～10 張・AI 額度與省 token',1,10,'6000 元學到的經驗'),
  SLIDE_SET('ppt2','簡報：數據驅動與備課入口','📊','花蓮夢N 簡報第 11～20 張・學校／縣市／全國',11,20,'數據驅動與備課入口'));
+/* 簡報也拆成單張牌：可以只插需要的那幾張 */
+[['ppt1','💸','6000 元學到的經驗',1,10],['ppt2','📊','數據驅動與備課入口',11,20]].forEach(([g,ico,run,a,z])=>{ for(let n=a;n<=z;n++) BANK.push({bid:g+'_'+n,grp:g,sn:n-a+1,tag:'簡報',lb:'簡報',k:'slide',u:10,img:'sl'+n,title:`${run}・第 ${n-a+1} 張`,ico,sub:`花蓮夢N 簡報第 ${n} 張`,cap:`${run}・第 ${n} 張`,runU:['簡報',run,'']}); });
 BANK.forEach(p=>{ p.id='bk_'+p.bid; p.bank=1; (p.more||[]).forEach((q,i)=>{ q.id='bk_'+p.bid+'_'+(i+2); q.bank=1; q.bid=p.bid; }); });
 
 UNITS.push(['備用','學員臨時需求','']);
@@ -1029,7 +1032,7 @@ function makePage(i,side){
   el.innerHTML=pageInner(p);
   /* 橫式寬頁：文字頁自動改左右兩欄，字級才能放大 */
   const bd=el.querySelector('.body');
-  if(bd && el.classList.contains('wide') && !bd.querySelector('.figp,.hero') && !bd.classList.contains('cov') && (bd.children.length>=2)) bd.classList.add('cand2');
+  if(bd && el.classList.contains('wide') && !bd.querySelector('.figp,.hero,.slidep') && !bd.classList.contains('cov') && (bd.children.length>=2)) bd.classList.add('cand2');
   return el;
 }
 function fitPage(el){
@@ -1747,10 +1750,15 @@ if(!STUDENT_BUILD) (function(){
      </div><div class="dk-col R" data-zone="bank"><h4>題庫・115 會考選擇題 25 題 <span class="dk-sub">拖到左邊牌組，或按按鈕；百分比是全國通過率；第 23～25 題另有選文</span></h4>
       <div class="qb-grid">${qs.map(b=>{const q=QBANK[b.qn],v=+q.al,c=v>=80?'g':v>=60?'o':'r';return `<div class="qb-it" draggable="true" data-k="B:${b.bid}" data-from="bank"><img src="${q.img}" alt="" draggable="false"><div class="qb-r"><b>第 ${b.qn} 題</b><span class="pc ${c}">${q.al}%</span></div><div class="qb-b"><button data-dx="insh" data-b="${b.bid}" class="on">插這裡</button><button data-dx="inse" data-b="${b.bid}">加最後</button></div></div>`}).join('')}</div>
       <h4 style="margin-top:14px">備用牌庫・學員臨時需求 <span class="dk-sub">拖到左邊牌組，或按按鈕插入</span></h4>
-      ${[["學員臨時需求",bank.filter(b=>!(b.tag||b.lb))],["補充素材・簡報與圖片",bank.filter(b=>b.tag||b.lb)]].map(g=>`<div class="bk-g">${g[0]}</div><div class="bk-list">${g[1].map(b=>`<div class="bk-it" draggable="true" data-k="B:${b.bid}" data-from="bank"><span class="bk-ic">${b.ico}</span><span class="bk-t"><b>${b.title}</b><small>${b.sub}</small></span>
-        <span class="bk-btn"><button data-dx="insh" data-b="${b.bid}" class="on">插在這裡並前往</button><button data-dx="insf" data-b="${b.bid}">放最前面</button><button data-dx="inse" data-b="${b.bid}">加到最後</button></span></div>`).join('')||'<div class="dk-empty">都已放進牌組</div>'}</div>`).join('')}
+      ${[["學員臨時需求",bank.filter(b=>!(b.tag||b.lb))],["補充素材・簡報與圖片",bank.filter(b=>(b.tag||b.lb)&&!b.grp)]].map(g=>`<div class="bk-g">${g[0]}</div><div class="bk-list">${g[1].map(b=>`<div class="bk-it" draggable="true" data-k="B:${b.bid}" data-from="bank"><span class="bk-ic">${b.ico}</span><span class="bk-t"><b>${b.title}</b><small>${b.sub}</small></span>
+        <span class="bk-btn"><button data-dx="insh" data-b="${b.bid}" class="on">插在這裡並前往</button><button data-dx="insf" data-b="${b.bid}">放最前面</button><button data-dx="inse" data-b="${b.bid}">加到最後</button></span>${b.more?slGrid(b.bid):''}</div>`).join('')||'<div class="dk-empty">都已放進牌組</div>'}</div>`).join('')}
+      ${['ppt1','ppt2'].filter(g=>ROUTE.o.includes('B:'+g)).map(g=>`<div class="bk-g">${BANK.find(b=>b.bid===g).title}・已整份放進牌組</div>`).join('')}
       <div class="dk-sub">講師目前在：<b>${label(hereKey())[0]}・${label(hereKey())[1]}</b>。調整後投影視窗會同步；按「👁 頁面 → 下載學員版」，學員版也照這個順序。</div>
      </div></div>`; }
+  const SL_OPEN={}; document.addEventListener('toggle',e=>{ const d=e.target; if(d.classList&&d.classList.contains('sl-d')) SL_OPEN[d.dataset.g]=d.open; },true);
+  function slGrid(g){ const all=BANK.filter(b=>b.grp===g), left=all.filter(b=>!ROUTE.o.includes('B:'+b.bid));
+    return `<details class="sl-d" data-g="${g}"${SL_OPEN[g]?' open':''}><summary>只挑幾張（${left.length}／${all.length} 張可插）</summary><div class="sl-grid">${all.map(b=>{ const on=ROUTE.o.includes('B:'+b.bid);
+      return `<div class="sl-it${on?' in':''}" ${on?'':`draggable="true" data-k="B:${b.bid}" data-from="bank"`}><img src="${IMG[b.img]}" alt="" draggable="false"><b>第 ${b.sn} 張${on?'・已在牌組':''}</b>${on?'':`<span><button data-dx="insh" data-b="${b.bid}" class="on">插這裡</button><button data-dx="inse" data-b="${b.bid}">加最後</button></span>`}</div>`; }).join('')}</div></details>`; }
   function moveKey(k,dlt){ const o=ROUTE.o.slice(), vis=o.filter(x=>!ROUTE.x.includes(x)), i=vis.indexOf(k), j=i+dlt; if(i<0||j<0||j>=vis.length) return;
     const a=o.indexOf(vis[i]), b2=o.indexOf(vis[j]); [o[a],o[b2]]=[o[b2],o[a]]; apply({o,x:ROUTE.x}); }
   function dropTo(k,from,zone,beforeK){
