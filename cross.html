@@ -560,7 +560,7 @@ body.proj .actlink,body.aud .actlink{display:none!important}
 .ip-c b{font-size:.95em;line-height:1.3}.ip-c small{font-size:.72em;color:var(--ink2)}
 .ip-ar{color:var(--ink3);font-weight:900;flex:none}
 .ip-rule{display:flex;align-items:center;gap:.45em;flex-wrap:wrap;margin-top:.7em;background:var(--paper);border-radius:.7em;padding:.45em .7em;font-weight:900}
-.ip-rule span{color:var(--ink2);margin-right:.3em}.ip-rule i{font-style:normal;background:var(--accent);color:#fff;border-radius:99px;padding:.05em .8em}.ip-rule em{font-style:normal;color:var(--ink3)}
+.ip-rule span{color:var(--ink2);margin-right:.3em}.ip-rule i{font-style:normal;background:var(--accent);color:#fff;border-radius:99px;padding:.05em .8em}.ip-rule em{font-style:normal;color:var(--ink3)}.ip-rule i[data-goto]{cursor:pointer}
 .tc.bank{border-style:dashed;border-color:var(--c-green)}.tc.bank .tc-n{background:transparent;font-size:1.3em}.tc.bank .tc-k em{background:#e3f4ec;color:var(--c-green)}
 /* ===== 題卡 ===== */
 .qb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:6px}
@@ -947,15 +947,22 @@ function introPage(){
   /* 「今天怎麼走」跟著牌組（ROUTE）的順序與收起狀態產生；點卡片跳到該段 */
   const at=n=>UNIT_START[n]!=null&&UNIT_START[n]>=0;
   const p31=()=>{ const i=PAGES.findIndex(p=>p.u===3&&(p.items||[]).some(b=>(b.pid&&/^3-1/.test(b.pid))||(b.b==='mini'&&b.items.some(m=>/^3-1/.test(m[0]))))); return i>=0?i:UNIT_START[3]; };
-  const STEP={1:[['🎯','一題會考題','看見學生卡在哪']],2:[['📚','讀懂示例','夢 N 001、002']],3:[['🎮','先玩範例','數字猜猜樂'],['🛠','自己做','學習單＋網頁']],7:[['✍️','寫成示例','帶回教室']]};
+  const STEP={1:[['🎯','一題會考題','看見學生卡在哪','一題<b>會考題</b>','']],2:[['📚','讀懂示例','夢 N 001、002','讀懂<b>夢 N 示例</b>','']],3:[['🎮','先玩範例','數字猜猜樂','先玩<b>數字猜猜樂</b>',''],['🛠','自己做','學習單＋網頁','','一個<b>自己做的網頁</b>']],7:[['✍️','寫成示例','帶回教室','','一份<b>帶回教室的示例</b>']]};
   const route=[]; ROUTE.o.forEach(k=>{ if(ROUTE.x.includes(k)||/^B:/.test(k)) return; const n=+k; if(!STEP[n]||!at(n)) return;
     STEP[n].forEach((d,j)=>route.push([n===3&&j===1?p31():UNIT_START[n],...d])); });
   const has3=at(3);
+  /* 標題：從第一步，到最後一步的成品 */
+  const fromS=route.length?(route[0][4]||route[0][2]):'', toS=route.length?(route[route.length-1][5]||route[route.length-1][2]):'';
+  const say=route.length>1?`從${fromS}，到${toS}`:route.length?`今天的重點：${route[0][2]}`:'';
+  /* 「自己做」的實作：照書裡實際的實作頁產生，點了跳到該頁 */
+  const DO=[['3-1','重做學習單'],['3-2','設計引導提問'],['3-3','交叉審題'],['3-4','做自己的網頁'],['3-5','加碼對戰']];
+  const doPg=DO.map(([id,t])=>[t,PAGES.findIndex(p=>p.u===3&&(p.items||[]).some(b=>b.pid===id))]).filter(x=>x[1]>=0);
+  const doN=route.findIndex(r=>r[2]==='自己做')+1;
   const ar='<span class="ip-ar">➜</span>';
   return `<div class="ip"><div class="ip-h"><div class="h3">開始之前</div><span class="ip-k">國中數學教師研習</span></div>
-   <section class="ip-band a"><div class="ip-bh"><span class="ip-tag">今天怎麼走</span><span class="ip-say">從一題<b>會考題</b>，到一個<b>自己做的網頁</b></span></div>
+   <section class="ip-band a"><div class="ip-bh"><span class="ip-tag">今天怎麼走</span><span class="ip-say">${say}</span></div>
     <div class="ip-row">${route.map((r,i)=>(i?ar:'')+st(i+1,r[1],r[2],r[3],'var(--accent)',r[0])).join('')}</div>
-    ${has3?'<div class="ip-rule"><span>同一個流程</span><i>抓迷思</i><em>›</em><i>出題</i><em>›</em><i>交叉審題</i><em>›</em><i>做網頁</i></div>':''}</section>
+    ${doN&&doPg.length?`<div class="ip-rule"><span>第 ${doN} 步「自己做」</span>${doPg.map((x,j)=>(j?'<em>›</em>':'')+`<i data-goto="${x[1]}" role="button">${x[0]}</i>`).join('')}</div>`:''}</section>
    <section class="ip-band b"><div class="ip-bh"><span class="ip-tag">怎麼看這本書</span><span class="ip-say">公用電腦免安裝，<b>只要瀏覽器</b></span></div>
     <div class="ip-row">${st(1,'📖','往右翻頁','或從目錄跳','var(--chalk)')}${ar}${st(2,'🤔','先猜','先想一想','var(--chalk)')}${ar}${st(3,'📱','手機作答','同一個連結','var(--chalk)')}${ar}${st(4,'📋','複製提示詞','貼給三家 AI','var(--chalk)')}</div></section>
   </div>`;
