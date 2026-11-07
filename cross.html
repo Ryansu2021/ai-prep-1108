@@ -588,6 +588,8 @@ body.proj .actlink,body.aud .actlink{display:none!important}
 .dk-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .dk-sub{font-size:12.5px;color:var(--ink3);font-weight:400}
 #dkd h4{margin:0 0 8px;font-size:15px}
+#dkd [draggable="true"]{-webkit-user-select:none;user-select:none;-webkit-user-drag:element}#dkd [draggable="true"] button{-webkit-user-drag:none}
+.bk-it.drag,.qb-it.drag,.sl-it.drag{opacity:.4}
 .dk-deck{display:flex;flex-wrap:wrap;gap:12px;align-items:stretch;min-height:110px}
 .dk-c{width:150px;min-height:180px;border:2px solid var(--line);border-radius:12px;background:var(--paper);padding:8px;display:flex;flex-direction:column;gap:4px;cursor:grab;user-select:none;transition:transform .12s}
 .dk-c:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(22,37,31,.14)}
@@ -1782,7 +1784,10 @@ if(!STUDENT_BUILD) (function(){
     const c=e.target.closest('.dk-c'); if(c && c.dataset.from==='deck'){ deckClose(); go(c.dataset.k); }
   },true);
   document.addEventListener('dragstart',e=>{ const c=e.target.closest&&e.target.closest('#dkd [draggable]'); if(!c) return; DRAG={k:c.dataset.k,from:c.dataset.from}; c.classList.add('drag'); try{ e.dataTransfer.setData('text/plain',c.dataset.k); }catch(er){} });
-  document.addEventListener('dragover',e=>{ if(DRAG && e.target.closest('#dkd [data-zone]')) e.preventDefault(); });
+  document.addEventListener('dragover',e=>{ if(!DRAG) return; if(e.target.closest('#dkd [data-zone]')) e.preventDefault();
+    /* 拖到可捲動區塊的上下緣時自動捲動（牌組在畫面外也拖得到） */
+    let sc=e.target.closest&&e.target.closest('#dkd .dk-col,#dkd .dk-in'); while(sc&&sc.scrollHeight<=sc.clientHeight+2) sc=sc.parentElement&&sc.parentElement.closest('#dkd .dk-col,#dkd .dk-in');
+    if(sc){ const r=sc.getBoundingClientRect(), m=60; if(e.clientY<r.top+m) sc.scrollTop-=14; else if(e.clientY>r.bottom-m) sc.scrollTop+=14; } });
   document.addEventListener('drop',e=>{ if(!DRAG) return; const z=e.target.closest('#dkd [data-zone]'); if(!z) return; e.preventDefault();
     const over=e.target.closest('.dk-c'); const before=(z.dataset.zone==='deck'&&over&&over.dataset.from==='deck'&&over.dataset.k!==DRAG.k)?over.dataset.k:null;
     const d=DRAG; DRAG=null; dropTo(d.k,d.from,z.dataset.zone,before); });
